@@ -1,0 +1,24 @@
+{
+  "name": "@liquid-bricks/agent-component",
+  "version": "1.0.0",
+  "description": "WebSocket component agent with routing, reconnection, and component discovery.",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js",
+    "./component/agent": "./index.js",
+    "./router": "./componentAgent/router/index.js",
+    "./codes": "./componentAgent/codes.js"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "test": "node test/run.js"
+  },
+  "dependencies": {
+    "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#cef4c2fe2e2793d49b7e189ce7e25c41c8e6090a",
+    "@liquid-bricks/lib-nats-subject": "file:../lib-nats-subject",
+    "@liquid-bricks/lib-component-builder": "file:../lib-component-builder",
+    "ws": "^8.18.3"
+  },
+  "license": "ISC"
+}
