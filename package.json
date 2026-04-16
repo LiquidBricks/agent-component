@@ -12,12 +12,13 @@
   },
   "sideEffects": false,
   "scripts": {
+    "demo": "node demo/index.js",
     "test": "node test/run.js"
   },
   "dependencies": {
-    "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#cef4c2fe2e2793d49b7e189ce7e25c41c8e6090a",
-    "@liquid-bricks/lib-nats-subject": "file:../lib-nats-subject",
-    "@liquid-bricks/lib-component-builder": "file:../lib-component-builder",
+    "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#61b706dfa029f0682faa97a2836685a84cd45809",
+    "@liquid-bricks/lib-nats-subject": "github:LiquidBricks/lib-nats-subject#5958dab01e5934267773f47aa280337547f52474",
+    "@liquid-bricks/lib-component-builder": "github:LiquidBricks/lib-component-builder#d6d44f20a6a3589f0245574f61a4548af3b10d5b",
     "ws": "^8.18.3"
   },
   "license": "ISC"

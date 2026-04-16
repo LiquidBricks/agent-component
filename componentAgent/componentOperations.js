@@ -5,7 +5,7 @@ import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper
 import { Codes } from './codes.js'
 
 
-async function findComponentFiles(rootDir) {
+export async function findComponentFiles(rootDir) {
   const files = [];
 
   async function walk(dir) {
@@ -38,8 +38,13 @@ export async function getComponents(directories, diagnostics) {
     diagnostics.require(('default' in mod), Codes.PRECONDITION_REQUIRED, `Flow file ${file} must have a default export (component or array of components)`, { file });
     const def = mod.default;
     const list = Array.isArray(def) ? def : [def];
+    diagnostics.require(
+      list.every(comp => comp?.[s.IDENTITY.COMPONENT]),
+      Codes.PRECONDITION_INVALID,
+      `Flow file ${file} default export contains a non-component item`,
+      { file }
+    );
     for (const comp of list) {
-      diagnostics.require(comp?.[s.IDENTITY.COMPONENT], Codes.PRECONDITION_INVALID, `Flow file ${file} default export contains a non-component item`, { file });
       const name = comp[s.INTERNALS].name;
       diagnostics.require(!byName.has(name), Codes.PRECONDITION_INVALID, `Duplicate component name detected: "${name}"`, { name });
       byName.set(name, comp);

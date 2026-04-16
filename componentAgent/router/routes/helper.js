@@ -4,13 +4,13 @@ import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper
 const typeToNodeAccessor = {
   data: (component) => component[s.INTERNALS].nodes.data,
   task: (component) => component[s.INTERNALS].nodes.tasks,
-  service: (component) => component[s.INTERNALS].nodes.services.provide,
+  gate: (component) => component[s.INTERNALS].nodes.gates,
 }
 
 export function createValidateExecutionRequest({ allowedTypes } = {}) {
   const allowed = Array.isArray(allowedTypes) && allowedTypes.length
     ? allowedTypes
-    : ['data', 'task', 'service']
+    : ['data', 'task', 'gate']
 
   return function validateExecutionRequest({ scope, rootCtx: { diagnostics, componentStore } }) {
     const { instanceId, type, componentHash, name } = scope;

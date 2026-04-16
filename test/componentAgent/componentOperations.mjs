@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { getComponents } from '../../componentAgent/componentOperations.js'
+import { findComponentFiles, getComponents } from '../../componentAgent/componentOperations.js'
 import { Codes } from '../../componentAgent/codes.js'
 import { diagnostics } from '@liquid-bricks/lib-diagnostics'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
@@ -34,6 +34,45 @@ function createDiagnostics() {
   const { logger } = createMemoryLogger()
   return diagnostics({ logger, metrics: defaultMetrics })
 }
+
+test('findComponentFiles returns .comp.js files from nested directories', async (t) => {
+  const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-findfiles-success-'))
+  t.after(() => fs.rm(tmpRoot, { recursive: true, force: true }))
+
+  const nestedDir = path.join(tmpRoot, 'level-one')
+  const deeperDir = path.join(nestedDir, 'level-two')
+  await fs.mkdir(deeperDir, { recursive: true })
+
+  const rootFile = path.join(tmpRoot, 'root.comp.js')
+  const childFile = path.join(nestedDir, 'child.comp.js')
+  const deepFile = path.join(deeperDir, 'deep.comp.js')
+
+  await Promise.all([
+    fs.writeFile(rootFile, '// root component\n', 'utf8'),
+    fs.writeFile(childFile, '// child component\n', 'utf8'),
+    fs.writeFile(deepFile, '// deep component\n', 'utf8'),
+    fs.writeFile(path.join(tmpRoot, 'ignore.txt'), 'do not include\n', 'utf8'),
+    fs.writeFile(path.join(nestedDir, 'ignore.other'), 'still ignore\n', 'utf8'),
+  ])
+
+  const files = await findComponentFiles(tmpRoot)
+  const expected = [rootFile, childFile, deepFile]
+  const sortedFiles = [...files].sort()
+  const sortedExpected = expected.slice().sort()
+  assert.deepStrictEqual(sortedFiles, sortedExpected)
+})
+
+test('findComponentFiles returns empty array when no matching files exist', async (t) => {
+  const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-findfiles-empty-'))
+  t.after(() => fs.rm(tmpRoot, { recursive: true, force: true }))
+
+  await fs.mkdir(path.join(tmpRoot, 'nested'), { recursive: true })
+  await fs.writeFile(path.join(tmpRoot, 'nested', 'ignore.js'), 'noop\n', 'utf8')
+  await fs.writeFile(path.join(tmpRoot, 'not-a-comp.txt'), 'noop\n', 'utf8')
+
+  const files = await findComponentFiles(tmpRoot)
+  assert.deepStrictEqual(files, [])
+})
 
 test('getComponents loads components and indexes them by hash', async (t) => {
   const diag = createDiagnostics()
@@ -74,6 +113,34 @@ test('getComponents loads components and indexes them by hash', async (t) => {
   for (const comp of expected) {
     const hash = comp[s.INTERNALS].hash()
     assert.equal(typeof hash, 'string')
+    assert.equal(components.get(hash), comp)
+  }
+})
+
+test('getComponents handles default export arrays with multiple components', async (t) => {
+  const diag = createDiagnostics()
+  const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-getcomponents-array-default-'))
+  t.after(() => fs.rm(tmpRoot, { recursive: true, force: true }))
+
+  const multiPath = await writeModule({
+    dir: tmpRoot,
+    fileName: 'multi.comp.js',
+    sourceLines: [
+      `import { component } from '${builderImportPath}';`,
+      `const one = component('one').task('noop', { fnc: () => 'one' });`,
+      `const two = component('two').data('value', { fnc: () => 2 });`,
+      `const three = component('three');`,
+      'export default [one, two, three];',
+      '',
+    ],
+  })
+
+  const expectedComponents = (await import(pathToFileURL(multiPath).href)).default
+  const components = await getComponents([tmpRoot], diag)
+
+  assert.equal(components.size, expectedComponents.length)
+  for (const comp of expectedComponents) {
+    const hash = comp[s.INTERNALS].hash()
     assert.equal(components.get(hash), comp)
   }
 })

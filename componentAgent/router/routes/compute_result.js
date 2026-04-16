@@ -1,6 +1,7 @@
 import { decodeData } from '../middleware.js'
 import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/basic'
 import { createValidateExecutionRequest } from './helper.js'
+import { Codes } from '../../codes.js'
 
 export const path = { channel: 'exec', entity: 'component', action: 'compute_result' }
 export const spec = {
@@ -16,8 +17,18 @@ export const spec = {
   ],
 }
 
-async function executeNode({ rootCtx: { diagnostics }, scope: { node, instanceId, name, deps } }) {
+async function executeNode({ rootCtx: { diagnostics }, scope: { node, instanceId, name, deps, type } }) {
   const result = await node.fnc({ deps });
+
+  if (type === 'gate') {
+    diagnostics.require(
+      result === true || result === false,
+      Codes.PRECONDITION_INVALID,
+      'gate fnc must return true or false',
+      { instanceId, name, type, result },
+    )
+  }
+
   return { result };
 }
 

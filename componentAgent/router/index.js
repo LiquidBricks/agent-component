@@ -1,7 +1,6 @@
 import { router } from '@liquid-bricks/lib-nats-subject';
 import { Codes } from '../../componentAgent/codes.js'
 import { path as computeResultPath, spec as computeResultSpec } from './routes/compute_result.js'
-import { path as initServicePath, spec as initServiceSpec } from './routes/init_service.js'
 import { path as registerComponentsPath, spec as registerComponentsSpec } from './routes/register_components.js'
 
 export function createExecutionRouter({
@@ -10,10 +9,9 @@ export function createExecutionRouter({
 }) {
   return router({
     tokens: ['env', 'ns', 'tenant', 'context', 'channel', 'entity', 'action', 'version', 'id'],
-    context: { publish, diagnostics, componentStore: createComponentStore(), serviceStore: createServiceStore() },
+    context: { publish, diagnostics, componentStore: createComponentStore() },
   })
     .route(registerComponentsPath, registerComponentsSpec)
-    .route(initServicePath, initServiceSpec)
     .route(computeResultPath, computeResultSpec)
     .default({
       handler: ({ message, rootCtx: { diagnostics } }) => {
@@ -40,20 +38,6 @@ function createComponentStore() {
     set(next) {
       components = next;
       return components;
-    },
-  };
-}
-
-function createServiceStore() {
-  const services = new Map();
-  return {
-    get(key) {
-      if (key === undefined) return services;
-      return services.get(key);
-    },
-    set(key, service) {
-      services.set(key, service);
-      return service;
     },
   };
 }
