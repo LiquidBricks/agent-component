@@ -16,9 +16,9 @@
     "test": "node test/run.js"
   },
   "dependencies": {
-    "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#61b706dfa029f0682faa97a2836685a84cd45809",
+    "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#7b27e34c65bcbfb75a3c16aaae7ace38bd5f2636",
     "@liquid-bricks/lib-nats-subject": "github:LiquidBricks/lib-nats-subject#5958dab01e5934267773f47aa280337547f52474",
-    "@liquid-bricks/lib-component-builder": "github:LiquidBricks/lib-component-builder#d6d44f20a6a3589f0245574f61a4548af3b10d5b",
+    "@liquid-bricks/lib-component-builder": "github:LiquidBricks/lib-component-builder#570910fab5d47de368cdd1b3e9fc7df4ea7d26de",
     "ws": "^8.18.3"
   },
   "license": "ISC"
