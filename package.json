@@ -18,7 +18,7 @@
   "dependencies": {
     "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#7b27e34c65bcbfb75a3c16aaae7ace38bd5f2636",
     "@liquid-bricks/lib-nats-subject": "github:LiquidBricks/lib-nats-subject#8d2f242951a919ba8f213a5a38f7b49546592548",
-    "@liquid-bricks/lib-component-builder": "github:LiquidBricks/lib-component-builder#af001e6688db1b30f5efda688a20ccd007c937b3",
+    "@liquid-bricks/lib-component-builder": "github:LiquidBricks/lib-component-builder#5c45f19810c1ba1f371e04b851de5f9bb451999b",
     "ws": "^8.18.3"
   },
   "license": "ISC"
