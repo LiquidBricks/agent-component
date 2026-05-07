@@ -185,6 +185,50 @@ test('getComponents rejects non-component exports', async (t) => {
   )
 })
 
+test('getComponents duplicate component names include source file metadata', async (t) => {
+  const diag = createDiagnostics()
+  const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-getcomponents-duplicate-name-'))
+  t.after(() => fs.rm(tmpRoot, { recursive: true, force: true }))
+
+  const firstDir = path.join(tmpRoot, 'first')
+  const duplicateDir = path.join(tmpRoot, 'duplicate')
+  const firstPath = await writeModule({
+    dir: firstDir,
+    fileName: 'nginx-first.comp.js',
+    sourceLines: [
+      `import { component } from '${builderImportPath}';`,
+      "export default component('nginx').data('port', { fnc: () => 80 });",
+      '',
+    ],
+  })
+  const duplicatePath = await writeModule({
+    dir: duplicateDir,
+    fileName: 'nginx-duplicate.comp.js',
+    sourceLines: [
+      `import { component } from '${builderImportPath}';`,
+      "export default component('nginx').data('port', { fnc: () => 8080 });",
+      '',
+    ],
+  })
+
+  await assert.rejects(
+    () => getComponents([firstDir, duplicateDir], diag),
+    (err) => {
+      assert.equal(err.code, Codes.PRECONDITION_INVALID)
+      assert.match(err.message, /Duplicate component name detected: "nginx"/)
+      assert.equal(err.meta.name, 'nginx')
+      assert.equal(err.meta.firstFile, firstPath)
+      assert.equal(err.meta.duplicateFile, duplicatePath)
+      assert.equal(typeof err.meta.firstHash, 'string')
+      assert.equal(typeof err.meta.duplicateHash, 'string')
+      assert.notEqual(err.meta.firstHash, err.meta.duplicateHash)
+      assert.equal(err.meta.firstExportIndex, 0)
+      assert.equal(err.meta.duplicateExportIndex, 0)
+      return true
+    }
+  )
+})
+
 test('getComponents rejects duplicate component hashes', async (t) => {
   const diag = createDiagnostics()
   const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-getcomponents-duplicate-hash-'))

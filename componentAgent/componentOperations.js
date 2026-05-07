@@ -33,6 +33,7 @@ export async function getComponents(directories, diagnostics) {
 
   const byName = new Map();
   const byHash = new Map();
+  const byHashSource = new Map();
   for (const file of files) {
     const mod = await import(pathToFileURL(file).href);
     diagnostics.require(('default' in mod), Codes.PRECONDITION_REQUIRED, `Flow file ${file} must have a default export (component or array of components)`, { file });
@@ -44,13 +45,44 @@ export async function getComponents(directories, diagnostics) {
       `Flow file ${file} default export contains a non-component item`,
       { file }
     );
-    for (const comp of list) {
+    for (let exportIndex = 0; exportIndex < list.length; exportIndex++) {
+      const comp = list[exportIndex];
       const name = comp[s.INTERNALS].name;
-      diagnostics.require(!byName.has(name), Codes.PRECONDITION_INVALID, `Duplicate component name detected: "${name}"`, { name });
-      byName.set(name, comp);
       const h = comp[s.INTERNALS].hash();
-      diagnostics.require(!byHash.has(h), Codes.PRECONDITION_INVALID, `Duplicate component hash detected: "${h}"`, { hash: h });
+      const source = { file, exportIndex, hash: h };
+      const existingNameSource = byName.get(name);
+      diagnostics.require(
+        !existingNameSource,
+        Codes.PRECONDITION_INVALID,
+        `Duplicate component name detected: "${name}"`,
+        {
+          name,
+          firstFile: existingNameSource?.file,
+          duplicateFile: file,
+          firstHash: existingNameSource?.hash,
+          duplicateHash: h,
+          firstExportIndex: existingNameSource?.exportIndex,
+          duplicateExportIndex: exportIndex,
+        },
+      );
+      byName.set(name, source);
+      const existingHashSource = byHashSource.get(h);
+      diagnostics.require(
+        !existingHashSource,
+        Codes.PRECONDITION_INVALID,
+        `Duplicate component hash detected: "${h}"`,
+        {
+          hash: h,
+          firstFile: existingHashSource?.file,
+          duplicateFile: file,
+          firstComponentName: existingHashSource?.name,
+          duplicateComponentName: name,
+          firstExportIndex: existingHashSource?.exportIndex,
+          duplicateExportIndex: exportIndex,
+        },
+      );
       byHash.set(h, comp);
+      byHashSource.set(h, { ...source, name });
     }
   }
   return byHash
