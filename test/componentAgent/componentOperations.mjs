@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { findComponentFiles, getComponents } from '../../componentAgent/componentOperations.js'
+import { findAgentFnFiles, findComponentFiles, getAgentFns, getComponents } from '../../componentAgent/componentOperations.js'
 import { Codes } from '../../componentAgent/codes.js'
 import { diagnostics } from '@liquid-bricks/lib-diagnostics'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
@@ -74,6 +74,26 @@ test('findComponentFiles returns empty array when no matching files exist', asyn
   assert.deepStrictEqual(files, [])
 })
 
+test('findAgentFnFiles returns .agentFn.js files from nested directories', async (t) => {
+  const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-findagentfnfiles-success-'))
+  t.after(() => fs.rm(tmpRoot, { recursive: true, force: true }))
+
+  const nestedDir = path.join(tmpRoot, 'level-one')
+  await fs.mkdir(nestedDir, { recursive: true })
+
+  const rootFile = path.join(tmpRoot, 'root.agentFn.js')
+  const childFile = path.join(nestedDir, 'child.agentFn.js')
+
+  await Promise.all([
+    fs.writeFile(rootFile, '// root agent fn\n', 'utf8'),
+    fs.writeFile(childFile, '// child agent fn\n', 'utf8'),
+    fs.writeFile(path.join(tmpRoot, 'ignore.comp.js'), '// component\n', 'utf8'),
+  ])
+
+  const files = await findAgentFnFiles(tmpRoot)
+  assert.deepStrictEqual([...files].sort(), [rootFile, childFile].sort())
+})
+
 test('getComponents loads components and indexes them by hash', async (t) => {
   const diag = createDiagnostics()
   const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-getcomponents-success-'))
@@ -115,6 +135,58 @@ test('getComponents loads components and indexes them by hash', async (t) => {
     assert.equal(typeof hash, 'string')
     assert.equal(components.get(hash), comp)
   }
+})
+
+test('getAgentFns loads agent functions and indexes them by portAddr', async (t) => {
+  const diag = createDiagnostics()
+  const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-getagentfns-success-'))
+  t.after(() => fs.rm(tmpRoot, { recursive: true, force: true }))
+
+  await writeModule({
+    dir: tmpRoot,
+    fileName: 'command.agentFn.js',
+    sourceLines: [
+      "export default {",
+      "  portAddr: 'cmd.run',",
+      "  hash: 'hash-1',",
+      "  fn: (cmd, args) => ({ cmd, args }),",
+      "};",
+      '',
+    ],
+  })
+
+  const agentFns = await getAgentFns([tmpRoot], diag)
+  assert.equal(agentFns.size, 1)
+  assert.equal(agentFns.get('cmd.run').hash, 'hash-1')
+  assert.deepEqual(agentFns.get('cmd.run').fn('echo', ['ok']), { cmd: 'echo', args: ['ok'] })
+})
+
+test('getAgentFns rejects duplicate portAddr values', async (t) => {
+  const diag = createDiagnostics()
+  const tmpRoot = await fs.mkdtemp(path.join(__dirname, 'tmp-getagentfns-duplicate-'))
+  t.after(() => fs.rm(tmpRoot, { recursive: true, force: true }))
+
+  await writeModule({
+    dir: path.join(tmpRoot, 'first'),
+    fileName: 'first.agentFn.js',
+    sourceLines: [
+      "export default { portAddr: 'cmd.run', hash: 'hash-1', fn: () => 1 };",
+      '',
+    ],
+  })
+  await writeModule({
+    dir: path.join(tmpRoot, 'second'),
+    fileName: 'second.agentFn.js',
+    sourceLines: [
+      "export default { portAddr: 'cmd.run', hash: 'hash-2', fn: () => 2 };",
+      '',
+    ],
+  })
+
+  await assert.rejects(
+    () => getAgentFns([tmpRoot], diag),
+    (err) => err.code === Codes.PRECONDITION_INVALID && /Duplicate agentFn portAddr/i.test(err.message)
+  )
 })
 
 test('getComponents handles default export arrays with multiple components', async (t) => {

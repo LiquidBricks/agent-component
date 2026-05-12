@@ -1,5 +1,5 @@
 import { decodeData } from '../middleware.js'
-import { getComponents } from '../../../componentAgent/componentOperations.js'
+import { getAgentFns, getComponents } from '../../../componentAgent/componentOperations.js'
 import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/basic'
 import { Codes } from '../../../componentAgent/codes.js'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
@@ -20,8 +20,11 @@ function ensureDirectoriesProvided({ scope: { directories }, rootCtx: { diagnost
   diagnostics.require(directories.length > 0, Codes.PRECONDITION_REQUIRED, 'directories is required', { field: 'directories' })
 }
 
-async function registerComponentsAndPublish({ scope: { directories }, rootCtx: { diagnostics, componentStore, publish }, message }) {
-  const components = await getComponents(directories, diagnostics)
+async function registerComponentsAndPublish({ scope: { directories }, rootCtx: { diagnostics, componentStore, agentFnStore, publish }, message }) {
+  const [components, agentFns] = await Promise.all([
+    getComponents(directories, diagnostics),
+    getAgentFns(directories, diagnostics),
+  ])
   diagnostics.require(
     components.size > 0,
     Codes.PRECONDITION_REQUIRED,
@@ -29,6 +32,7 @@ async function registerComponentsAndPublish({ scope: { directories }, rootCtx: {
     { directories },
   )
   componentStore.set(components)
+  agentFnStore.set(agentFns)
 
   const registrationSubject = createSubject()
     .env('prod')
@@ -47,5 +51,5 @@ async function registerComponentsAndPublish({ scope: { directories }, rootCtx: {
 
   try { message?.ack?.() } catch (_) { /* ignore */ }
 
-  return { status: 'registered', components: components.size }
+  return { status: 'registered', components: components.size, agentFns: agentFns.size }
 }

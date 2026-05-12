@@ -9,7 +9,12 @@ export function createExecutionRouter({
 }) {
   return router({
     tokens: ['env', 'ns', 'tenant', 'context', 'channel', 'entity', 'action', 'version', 'id'],
-    context: { publish, diagnostics, componentStore: createComponentStore() },
+    context: {
+      publish,
+      diagnostics,
+      componentStore: createStore(),
+      agentFnStore: createStore(),
+    },
   })
     .route(registerComponentsPath, registerComponentsSpec)
     .route(computeResultPath, computeResultSpec)
@@ -31,13 +36,13 @@ export function createExecutionRouter({
     })
 }
 
-function createComponentStore() {
-  let components;
+function createStore() {
+  let value;
   return {
-    get() { return components; },
+    get() { return value; },
     set(next) {
-      components = next;
-      return components;
+      value = next;
+      return value;
     },
   };
 }
