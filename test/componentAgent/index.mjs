@@ -271,7 +271,7 @@ test('queued compute_result requests are processed once the router is ready', as
     .context('component-agent')
     .entity('component')
     .channel('evt')
-    .action('result_computed')
+    .action('computeResultDone')
     .version('v1')
     .build()
 

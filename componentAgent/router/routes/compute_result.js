@@ -14,7 +14,7 @@ export const spec = {
   ],
   handler: executeNode,
   post: [
-    publishComputedResult,
+    publishComputeResultDone,
   ],
 }
 
@@ -97,7 +97,7 @@ function getRequestedAgentFnAliases(node) {
 }
 
 
-async function publishComputedResult({ scope, rootCtx: { publish, diagnostics } }) {
+async function publishComputeResultDone({ scope, rootCtx: { publish, diagnostics } }) {
   const { instanceId, result, type, name } = scope;
   const subject = createSubject()
     .env('prod')
@@ -105,7 +105,7 @@ async function publishComputedResult({ scope, rootCtx: { publish, diagnostics } 
     .context('component-agent')
     .entity('component')
     .channel('evt')
-    .action(`result_computed`)
+    .action(`computeResultDone`)
     .version('v1');
 
   await publish(
