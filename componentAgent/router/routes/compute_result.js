@@ -4,6 +4,9 @@ import { createValidateExecutionRequest } from './helper.js'
 import { Codes } from '../../codes.js'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 
+import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
+
+
 export const path = { channel: 'exec', entity: 'component', action: 'compute_result' }
 export const spec = {
   decode: [
@@ -96,17 +99,11 @@ function getRequestedAgentFnAliases(node) {
   );
 }
 
-
 async function publishComputeResultDone({ scope, rootCtx: { publish, diagnostics } }) {
   const { instanceId, result, type, name } = scope;
-  const subject = createSubject()
+  const subject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*'])
     .env('prod')
-    .ns('component-service')
-    .context('component-agent')
-    .entity('component')
-    .channel('evt')
-    .action(`computeResultDone`)
-    .version('v1');
+    .context('component-agent');
 
   await publish(
     subject.build(),

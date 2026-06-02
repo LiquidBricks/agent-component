@@ -4,6 +4,9 @@ import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/
 import { Codes } from '../../../componentAgent/codes.js'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 
+import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
+
+
 export const path = { channel: 'cmd', entity: 'agent', action: 'register-components' }
 export const spec = {
   decode: [
@@ -34,14 +37,9 @@ async function registerComponentsAndPublish({ scope: { directories }, rootCtx: {
   componentStore.set(components)
   agentFnStore.set(agentFns)
 
-  const registrationSubject = createSubject()
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'])
     .env('prod')
-    .ns('component-service')
     .context('component-agent')
-    .entity('component')
-    .channel('cmd')
-    .action('register')
-    .version('v1')
     .build()
 
   for (const [, comp] of components) {

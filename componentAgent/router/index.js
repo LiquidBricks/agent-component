@@ -3,6 +3,11 @@ import { Codes } from '../../componentAgent/codes.js'
 import { path as computeResultPath, spec as computeResultSpec } from './routes/compute_result.js'
 import { path as registerComponentsPath, spec as registerComponentsSpec } from './routes/register_components.js'
 
+export const routes = [
+  [registerComponentsPath, registerComponentsSpec],
+  [computeResultPath, computeResultSpec],
+]
+
 export function createExecutionRouter({
   diagnostics,
   publish,
@@ -16,8 +21,7 @@ export function createExecutionRouter({
       agentFnStore: createStore(),
     },
   })
-    .route(registerComponentsPath, registerComponentsSpec)
-    .route(computeResultPath, computeResultSpec)
+    .route({}, { children: routes })
     .default({
       handler: ({ message, rootCtx: { diagnostics } }) => {
         diagnostics.warn(false, Codes.PRECONDITION_INVALID, 'No handler for subject', { subject: message?.subject })

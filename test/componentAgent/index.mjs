@@ -5,12 +5,14 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { WebSocketServer } from 'ws'
-
 import { createComponentAgent, createExecutionRouter } from '../../index.js'
 import { diagnostics } from '@liquid-bricks/lib-diagnostics'
 import { component } from '@liquid-bricks/lib-component-builder/component/builder'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/basic'
+
+import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
+
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const builderImportPath = '@liquid-bricks/lib-component-builder/component/builder'
@@ -130,14 +132,9 @@ test('component agent registers discovered components on connect', async (t) => 
     diagnostics: diag,
   })
 
-  const registrationSubject = createSubject()
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'])
     .env('prod')
-    .ns('component-service')
     .context('component-agent')
-    .entity('component')
-    .channel('cmd')
-    .action('register')
-    .version('v1')
     .build()
 
   const message = await waitForMessage(
@@ -182,14 +179,9 @@ test('agent re-registers components on register-components command', async (t) =
 
   const [ws] = await connectionPromise
 
-  const registrationSubject = createSubject()
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'])
     .env('prod')
-    .ns('component-service')
     .context('component-agent')
-    .entity('component')
-    .channel('cmd')
-    .action('register')
-    .version('v1')
     .build()
 
   const initialRegistration = await waitForMessage(
@@ -199,14 +191,9 @@ test('agent re-registers components on register-components command', async (t) =
   assert.ok(initialRegistration, 'expected initial registration message')
   server.messages.length = 0
 
-  const registerComponentsCmdSubject = createSubject()
+  const registerComponentsCmdSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.agent.register_components.v1['*'])
     .env('prod')
-    .ns('component-service')
     .context('component-agent')
-    .channel('cmd')
-    .entity('agent')
-    .action('register-components')
-    .version('v1')
     .build()
 
   ws.send(JSON.stringify({
@@ -255,24 +242,14 @@ test('queued compute_result requests are processed once the router is ready', as
 
   const [ws] = await connectionPromise
 
-  const computeSubject = createSubject()
+  const computeSubject = createSubject(natsEvents['*'].component_service['*']['*'].exec.component.compute_result.v1['*'])
     .env('prod')
-    .ns('component-service')
     .context('component-agent')
-    .channel('exec')
-    .entity('component')
-    .action('compute_result')
-    .version('v1')
     .build()
 
-  const resultSubject = createSubject()
+  const resultSubject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*'])
     .env('prod')
-    .ns('component-service')
     .context('component-agent')
-    .entity('component')
-    .channel('evt')
-    .action('computeResultDone')
-    .version('v1')
     .build()
 
   ws.send(JSON.stringify({

@@ -1,6 +1,9 @@
 import { Codes } from './codes.js';
 import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/basic';
 
+import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
+
+
 const DEFAULT_BACKOFF = {
   initialDelayMs: 1_000,
   maxDelayMs: 30_000,
@@ -54,14 +57,9 @@ export function createAgentConfig({
   );
 
   const endpoint = `ws://${ipAddress}:${port}/componentAgent`;
-  const registerComponentsSubject = createSubject()
+  const registerComponentsSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.agent.register_components.v1['*'])
     .env('prod')
-    .ns('component-service')
     .context('component-agent')
-    .channel('cmd')
-    .entity('agent')
-    .action('register-components')
-    .version('v1')
     .build();
 
   return {
