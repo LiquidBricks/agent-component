@@ -132,7 +132,7 @@ test('component agent registers discovered components on connect', async (t) => 
     diagnostics: diag,
   })
 
-  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'])
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*']).forPublish()
     .env('prod')
     .context('component-agent')
     .build()
@@ -179,7 +179,7 @@ test('agent re-registers components on register-components command', async (t) =
 
   const [ws] = await connectionPromise
 
-  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'])
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*']).forPublish()
     .env('prod')
     .context('component-agent')
     .build()
@@ -191,7 +191,7 @@ test('agent re-registers components on register-components command', async (t) =
   assert.ok(initialRegistration, 'expected initial registration message')
   server.messages.length = 0
 
-  const registerComponentsCmdSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.agent.register_components.v1['*'])
+  const registerComponentsCmdSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.agent.register_components.v1['*']).forPublish()
     .env('prod')
     .context('component-agent')
     .build()
@@ -242,12 +242,12 @@ test('queued compute_result requests are processed once the router is ready', as
 
   const [ws] = await connectionPromise
 
-  const computeSubject = createSubject(natsEvents['*'].component_service['*']['*'].exec.component.compute_result.v1['*'])
+  const computeSubject = createSubject(natsEvents['*'].component_service['*']['*'].exec.component.compute_result.v1['*']).forPublish()
     .env('prod')
     .context('component-agent')
     .build()
 
-  const resultSubject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*'])
+  const resultSubject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*']).forPublish()
     .env('prod')
     .context('component-agent')
     .build()

@@ -101,7 +101,7 @@ function getRequestedAgentFnAliases(node) {
 
 async function publishComputeResultDone({ scope, rootCtx: { publish, diagnostics } }) {
   const { instanceId, result, type, name } = scope;
-  const subject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*'])
+  const subject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*']).forPublish()
     .env('prod')
     .context('component-agent');
 

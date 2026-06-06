@@ -57,7 +57,7 @@ export function createAgentConfig({
   );
 
   const endpoint = `ws://${ipAddress}:${port}/componentAgent`;
-  const registerComponentsSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.agent.register_components.v1['*'])
+  const registerComponentsSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.agent.register_components.v1['*']).forPublish()
     .env('prod')
     .context('component-agent')
     .build();

@@ -37,7 +37,7 @@ async function registerComponentsAndPublish({ scope: { directories }, rootCtx: {
   componentStore.set(components)
   agentFnStore.set(agentFns)
 
-  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'])
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*']).forPublish()
     .env('prod')
     .context('component-agent')
     .build()
