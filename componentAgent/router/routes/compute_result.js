@@ -7,9 +7,8 @@ import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper
 import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
 
 
-export const path = createSubject(natsEvents['*'].component_service['*']['*'].exec.component.compute_result.v1['*'])
+export const path = createSubject(natsEvents['*'].component_service['*'].agent.exec.component.compute_result.v1['*'])
   .forSubscribe()
-  .context('component-agent')
   .toObject()
 
 export const spec = {
@@ -105,9 +104,8 @@ function getRequestedAgentFnAliases(node) {
 
 async function publishComputeResultDone({ scope, rootCtx: { publish, diagnostics } }) {
   const { instanceId, result, type, name } = scope;
-  const subject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*']).forPublish()
+  const subject = createSubject(natsEvents['*'].component_service['*'].agent.evt.component.computeResultDone.v1['*']).forPublish()
     .env('prod')
-    .context('component-agent');
 
   await publish(
     subject.build(),

@@ -242,14 +242,12 @@ test('queued compute_result requests are processed once the router is ready', as
 
   const [ws] = await connectionPromise
 
-  const computeSubject = createSubject(natsEvents['*'].component_service['*']['*'].exec.component.compute_result.v1['*']).forPublish()
+  const computeSubject = createSubject(natsEvents['*'].component_service['*'].agent.exec.component.compute_result.v1['*']).forPublish()
     .env('prod')
-    .context('component-agent')
     .build()
 
-  const resultSubject = createSubject(natsEvents['*'].component_service['*']['*'].evt.component.computeResultDone.v1['*']).forPublish()
+  const resultSubject = createSubject(natsEvents['*'].component_service['*'].agent.evt.component.computeResultDone.v1['*']).forPublish()
     .env('prod')
-    .context('component-agent')
     .build()
 
   ws.send(JSON.stringify({

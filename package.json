@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@liquid-bricks/lib-diagnostics": "github:LiquidBricks/lib-diagnostics#7b27e34c65bcbfb75a3c16aaae7ace38bd5f2636",
-    "@liquid-bricks/lib-nats-subject": "github:LiquidBricks/lib-nats-subject#ad70a82d59027ee6b2349366f50b14c37f58ef74",
+    "@liquid-bricks/lib-nats-subject": "github:LiquidBricks/lib-nats-subject#91d8d79aee3797a332b4d3f4fd0254b9ac727d04",
     "@liquid-bricks/lib-component-builder": "github:LiquidBricks/lib-component-builder#311b3a49df58f9c1f03f9eaf6720b3d0dbc37faa",
     "ws": "^8.18.3"
   },
