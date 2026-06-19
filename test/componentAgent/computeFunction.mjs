@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { diagnostics as makeDiagnostics } from '@liquid-bricks/lib-diagnostics'
-import { spec as computeResultSpec } from '../../componentAgent/router/routes/compute_result.js'
+import { handler } from '../../componentAgent/router/routes/compute_function/handler.js'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 import { agentFn as createAgentFn } from '../../../lib-component-builder/componentBuilder/index.js'
 
@@ -20,14 +20,14 @@ test('gate fnc must return a boolean', async () => {
   const diagnostics = makeDiagnosticsInstance()
 
   await assert.rejects(
-    () => computeResultSpec.handler({
+    () => handler({
       rootCtx: { diagnostics },
       scope: { node: { fnc: () => 'yes' }, deps: {}, type: 'gate', name: 'setup' },
     }),
     diagnostics.DiagnosticError,
   )
 
-  const result = await computeResultSpec.handler({
+  const result = await handler({
     rootCtx: { diagnostics },
     scope: { node: { fnc: () => true }, deps: {}, type: 'gate', name: 'setup' },
   })
@@ -51,7 +51,7 @@ test('node fnc receives registered agentFns by alias', async () => {
     ]),
   }
 
-  const result = await computeResultSpec.handler({
+  const result = await handler({
     rootCtx: { diagnostics, agentFnStore },
     scope: {
       component,
@@ -84,7 +84,7 @@ test('agentFn hash mismatch fails execution', async () => {
   }
 
   await assert.rejects(
-    () => computeResultSpec.handler({
+    () => handler({
       rootCtx: { diagnostics, agentFnStore },
       scope: {
         component,
@@ -126,7 +126,7 @@ test('agentFn without expected hash allows same portAddr with different implemen
       ]),
     }
 
-    return computeResultSpec.handler({
+    return handler({
       rootCtx: { diagnostics, agentFnStore },
       scope: {
         component,
@@ -161,7 +161,7 @@ test('agentFns are exposed only when requested by node deps', async () => {
     ]),
   }
 
-  const result = await computeResultSpec.handler({
+  const result = await handler({
     rootCtx: { diagnostics, agentFnStore },
     scope: {
       component,

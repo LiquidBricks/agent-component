@@ -214,7 +214,7 @@ test('agent re-registers components on register-components command', async (t) =
   agent.close()
 })
 
-test('queued compute_result requests are processed once the router is ready', async (t) => {
+test('queued compute_function commands are processed once the router is ready', async (t) => {
   const { logger } = createMemoryLogger()
   const diag = diagnostics({ logger, metrics: defaultMetrics })
 
@@ -242,11 +242,11 @@ test('queued compute_result requests are processed once the router is ready', as
 
   const [ws] = await connectionPromise
 
-  const computeSubject = createSubject(natsEvents['*'].component_service['*'].agent.exec.component.compute_result.v1['*']).forPublish()
+  const computeSubject = createSubject(natsEvents['*'].agent['*']['*'].cmd.component.compute_function.v1['*']).forPublish()
     .env('prod')
     .build()
 
-  const resultSubject = createSubject(natsEvents['*'].component_service['*'].agent.evt.component.computeResultDone.v1['*']).forPublish()
+  const resultSubject = createSubject(natsEvents['*'].gateway['*'].function_result.evt.component.compute_function.v1['*']).forPublish()
     .env('prod')
     .build()
 

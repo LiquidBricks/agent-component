@@ -1,11 +1,11 @@
 import { router } from '@liquid-bricks/lib-nats-subject';
 import { Codes } from '../../componentAgent/codes.js'
-import { path as computeResultPath, spec as computeResultSpec } from './routes/compute_result.js'
-import { path as registerComponentsPath, spec as registerComponentsSpec } from './routes/register_components.js'
+import { path as computeFunctionPath, spec as computeFunctionSpec } from './routes/compute_function/index.js'
+import { path as registerComponentsPath, spec as registerComponentsSpec } from './routes/register_components/index.js'
 
 export const routes = [
   [registerComponentsPath, registerComponentsSpec],
-  [computeResultPath, computeResultSpec],
+  [computeFunctionPath, computeFunctionSpec],
 ]
 
 export function createExecutionRouter({
