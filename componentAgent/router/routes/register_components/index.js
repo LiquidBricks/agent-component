@@ -11,7 +11,13 @@ export const path = createSubject(natsEvents['*'].component_service['*']['*'].cm
   .context('component-agent')
   .toObject()
 
+export const emits = {
+  'component_service.cmd.component.register.v1':
+    natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'],
+}
+
 export const spec = {
+  context: { emits },
   decode: [
     decodeData(['directories']),
   ],

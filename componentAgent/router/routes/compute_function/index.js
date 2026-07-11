@@ -11,7 +11,13 @@ export const path = createSubject(natsEvents['*'].agent['*']['*'].cmd.component.
   .forSubscribe()
   .toObject()
 
+export const emits = {
+  'gateway.function_result.evt.component.compute_function.v1':
+    natsEvents['*'].gateway['*'].function_result.evt.component.compute_function.v1['*'],
+}
+
 export const spec = {
+  context: { emits },
   decode: [
     decodeData(['instanceId', 'deps', 'componentHash', 'name', 'type']),
   ],
