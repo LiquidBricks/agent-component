@@ -16,7 +16,6 @@ const expectedExportKeys = [
   '.',
   './component/agent',
   './router',
-  './codes',
 ]
 
 test('exports keys match expected API surface', () => {

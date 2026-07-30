@@ -1,4 +1,4 @@
-import { Codes } from './codes.js';
+import { AGENT_SOCKET_ERROR } from '@liquid-bricks/lib-diagnostics/codes';
 import { createExecutionRouter } from './router/index.js';
 
 export function createQueueProcessor({
@@ -35,7 +35,7 @@ export function createQueueProcessor({
               await router.request({ subject: payload.subject, message: payload });
             }
           } catch (error) {
-            diagnostics.warn(false, Codes.AGENT_SOCKET_ERROR, 'Failed to process queued component message', {
+            diagnostics.warn(false, AGENT_SOCKET_ERROR, 'Failed to process queued component message', {
               error,
               subject: payload?.subject,
             });

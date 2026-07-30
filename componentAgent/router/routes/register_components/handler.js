@@ -1,6 +1,6 @@
 import { getAgentFns, getComponents } from '../../../componentOperations.js'
 import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/basic'
-import { Codes } from '../../../codes.js'
+import { PRECONDITION_REQUIRED } from '@liquid-bricks/lib-diagnostics/codes'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 
 export async function handler({
@@ -15,7 +15,7 @@ export async function handler({
   ])
   diagnostics.require(
     components.size > 0,
-    Codes.PRECONDITION_REQUIRED,
+    PRECONDITION_REQUIRED,
     'No components found in directories: ' + directories.join(', '),
     { directories },
   )

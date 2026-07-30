@@ -5,7 +5,7 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { findAgentFnFiles, findComponentFiles, getAgentFns, getComponents } from '../../componentAgent/componentOperations.js'
-import { Codes } from '../../componentAgent/codes.js'
+import { PRECONDITION_INVALID, PRECONDITION_REQUIRED } from '@liquid-bricks/lib-diagnostics/codes'
 import { diagnostics } from '@liquid-bricks/lib-diagnostics'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 
@@ -185,7 +185,7 @@ test('getAgentFns rejects duplicate portAddr values', async (t) => {
 
   await assert.rejects(
     () => getAgentFns([tmpRoot], diag),
-    (err) => err.code === Codes.PRECONDITION_INVALID && /Duplicate agentFn portAddr/i.test(err.message)
+    (err) => err.code === PRECONDITION_INVALID && /Duplicate agentFn portAddr/i.test(err.message)
   )
 })
 
@@ -233,7 +233,7 @@ test('getComponents requires a default export', async (t) => {
 
   await assert.rejects(
     () => getComponents([tmpRoot], diag),
-    (err) => err.code === Codes.PRECONDITION_REQUIRED && /default export/.test(err.message)
+    (err) => err.code === PRECONDITION_REQUIRED && /default export/.test(err.message)
   )
 })
 
@@ -253,7 +253,7 @@ test('getComponents rejects non-component exports', async (t) => {
 
   await assert.rejects(
     () => getComponents([tmpRoot], diag),
-    (err) => err.code === Codes.PRECONDITION_INVALID && /non-component item/i.test(err.message)
+    (err) => err.code === PRECONDITION_INVALID && /non-component item/i.test(err.message)
   )
 })
 
@@ -286,7 +286,7 @@ test('getComponents duplicate component names include source file metadata', asy
   await assert.rejects(
     () => getComponents([firstDir, duplicateDir], diag),
     (err) => {
-      assert.equal(err.code, Codes.PRECONDITION_INVALID)
+      assert.equal(err.code, PRECONDITION_INVALID)
       assert.match(err.message, /Duplicate component name detected: "nginx"/)
       assert.equal(err.meta.name, 'nginx')
       assert.equal(err.meta.firstFile, firstPath)
@@ -325,6 +325,6 @@ test('getComponents rejects duplicate component hashes', async (t) => {
 
   await assert.rejects(
     () => getComponents([tmpRoot], diag),
-    (err) => err.code === Codes.PRECONDITION_INVALID && /Duplicate component hash/i.test(err.message)
+    (err) => err.code === PRECONDITION_INVALID && /Duplicate component hash/i.test(err.message)
   )
 })

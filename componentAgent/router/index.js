@@ -1,5 +1,5 @@
 import { router } from '@liquid-bricks/lib-nats-subject';
-import { Codes } from '../../componentAgent/codes.js'
+import { PRECONDITION_INVALID } from '@liquid-bricks/lib-diagnostics/codes'
 import { path as computeFunctionPath, spec as computeFunctionSpec } from './routes/compute_function/index.js'
 import { path as registerComponentsPath, spec as registerComponentsSpec } from './routes/register_components/index.js'
 
@@ -24,12 +24,12 @@ export function createExecutionRouter({
     .route({}, { children: routes })
     .default({
       handler: ({ message, rootCtx: { diagnostics } }) => {
-        diagnostics.warn(false, Codes.PRECONDITION_INVALID, 'No handler for subject', { subject: message?.subject })
+        diagnostics.warn(false, PRECONDITION_INVALID, 'No handler for subject', { subject: message?.subject })
         try { message?.ack?.() } catch (_) { /* ignore */ }
       }
     })
     .error(({ error, message, rootCtx: { diagnostics } }) => {
-      diagnostics.warn(false, Codes.PRECONDITION_INVALID, 'component provider router error', { error, subject: message?.subject })
+      diagnostics.warn(false, PRECONDITION_INVALID, 'component provider router error', { error, subject: message?.subject })
       try { message?.ack?.() } catch (_) { /* ignore */ }
       return { status: 'errored' }
     })

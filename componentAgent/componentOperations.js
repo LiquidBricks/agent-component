@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "path";
 import { pathToFileURL } from "url";
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper';
-import { Codes } from './codes.js'
+import { PRECONDITION_INVALID, PRECONDITION_REQUIRED } from '@liquid-bricks/lib-diagnostics/codes'
 
 
 async function findFilesBySuffix(rootDir, suffix) {
@@ -44,12 +44,12 @@ export async function getComponents(directories, diagnostics) {
   const byHashSource = new Map();
   for (const file of files) {
     const mod = await import(pathToFileURL(file).href);
-    diagnostics.require(('default' in mod), Codes.PRECONDITION_REQUIRED, `Flow file ${file} must have a default export (component or array of components)`, { file });
+    diagnostics.require(('default' in mod), PRECONDITION_REQUIRED, `Flow file ${file} must have a default export (component or array of components)`, { file });
     const def = mod.default;
     const list = Array.isArray(def) ? def : [def];
     diagnostics.require(
       list.every(comp => comp?.[s.IDENTITY.COMPONENT]),
-      Codes.PRECONDITION_INVALID,
+      PRECONDITION_INVALID,
       `Flow file ${file} default export contains a non-component item`,
       { file }
     );
@@ -61,7 +61,7 @@ export async function getComponents(directories, diagnostics) {
       const existingNameSource = byName.get(name);
       diagnostics.require(
         !existingNameSource,
-        Codes.PRECONDITION_INVALID,
+        PRECONDITION_INVALID,
         `Duplicate component name detected: "${name}"`,
         {
           name,
@@ -77,7 +77,7 @@ export async function getComponents(directories, diagnostics) {
       const existingHashSource = byHashSource.get(h);
       diagnostics.require(
         !existingHashSource,
-        Codes.PRECONDITION_INVALID,
+        PRECONDITION_INVALID,
         `Duplicate component hash detected: "${h}"`,
         {
           hash: h,
@@ -107,7 +107,7 @@ export async function getAgentFns(directories, diagnostics) {
     const exports = collectAgentFnExports(mod);
     diagnostics.require(
       exports.length > 0,
-      Codes.PRECONDITION_REQUIRED,
+      PRECONDITION_REQUIRED,
       `Agent function file ${file} must export an agentFn or array of agentFns`,
       { file },
     );
@@ -116,7 +116,7 @@ export async function getAgentFns(directories, diagnostics) {
       const normalized = normalizeAgentFn(value);
       diagnostics.require(
         normalized,
-        Codes.PRECONDITION_INVALID,
+        PRECONDITION_INVALID,
         `Agent function file ${file} export contains a non-agentFn item`,
         { file, exportName, exportIndex },
       );
@@ -126,7 +126,7 @@ export async function getAgentFns(directories, diagnostics) {
       const existingSource = byPortAddrSource.get(portAddr);
       diagnostics.require(
         !existingSource,
-        Codes.PRECONDITION_INVALID,
+        PRECONDITION_INVALID,
         `Duplicate agentFn portAddr detected: "${portAddr}"`,
         {
           portAddr,

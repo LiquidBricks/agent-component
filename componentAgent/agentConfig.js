@@ -1,4 +1,4 @@
-import { Codes } from './codes.js';
+import { PRECONDITION_INVALID, PRECONDITION_REQUIRED } from '@liquid-bricks/lib-diagnostics/codes';
 import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/basic';
 
 import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
@@ -33,25 +33,25 @@ export function createAgentConfig({
 
   diagnostics.require(
     ipAddress,
-    Codes.PRECONDITION_REQUIRED,
+    PRECONDITION_REQUIRED,
     'ipAddress is required to start the component agent',
     { field: 'ipAddress' },
   );
   diagnostics.require(
     port,
-    Codes.PRECONDITION_REQUIRED,
+    PRECONDITION_REQUIRED,
     'port is required to start the component agent',
     { field: 'port' },
   );
   diagnostics.require(
     directories,
-    Codes.PRECONDITION_REQUIRED,
+    PRECONDITION_REQUIRED,
     'directories is required',
     { field: 'directories' },
   );
   diagnostics.require(
     Array.isArray(directories),
-    Codes.PRECONDITION_INVALID,
+    PRECONDITION_INVALID,
     'directories must be an array',
     { field: 'directories' },
   );

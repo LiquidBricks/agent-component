@@ -1,4 +1,4 @@
-import { Codes } from './codes.js';
+import { AGENT_REGISTRATION_FAILED, AGENT_SOCKET_ERROR, PRECONDITION_INVALID } from '@liquid-bricks/lib-diagnostics/codes';
 
 /**
  * Keep WebSocket event handlers focused and testable by isolating them from
@@ -21,7 +21,7 @@ export function createSocketHandlers({
     })().catch((error) => {
       diagnostics.warn(
         false,
-        Codes.AGENT_REGISTRATION_FAILED,
+        AGENT_REGISTRATION_FAILED,
         'Component agent registration error',
         { error },
       );
@@ -35,7 +35,7 @@ export function createSocketHandlers({
     try {
       parsed = JSON.parse(normalizedRaw);
     } catch (error) {
-      diagnostics.warn(false, Codes.PRECONDITION_INVALID,
+      diagnostics.warn(false, PRECONDITION_INVALID,
         'componentDispatcher received invalid JSON', {
         raw: normalizedRaw,
         error: error?.message ?? String(error),
@@ -53,7 +53,7 @@ export function createSocketHandlers({
   };
 
   const handleError = (error) => {
-    diagnostics.warn(false, Codes.AGENT_SOCKET_ERROR, 'Component agent error', { error });
+    diagnostics.warn(false, AGENT_SOCKET_ERROR, 'Component agent error', { error });
     reconnect.schedule();
   };
 
