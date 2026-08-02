@@ -132,9 +132,8 @@ test('component agent registers discovered components on connect', async (t) => 
     diagnostics: diag,
   })
 
-  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*']).forPublish()
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['component-agent'].cmd.component.register.v1['*']).forPublish()
     .env('prod')
-    .context('component-agent')
     .build()
 
   const message = await waitForMessage(
@@ -179,9 +178,8 @@ test('agent re-registers components on register-components command', async (t) =
 
   const [ws] = await connectionPromise
 
-  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*']).forPublish()
+  const registrationSubject = createSubject(natsEvents['*'].component_service['*']['component-agent'].cmd.component.register.v1['*']).forPublish()
     .env('prod')
-    .context('component-agent')
     .build()
 
   const initialRegistration = await waitForMessage(

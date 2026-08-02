@@ -13,7 +13,7 @@ export const path = createSubject(natsEvents['*'].component_service['*']['*'].cm
 
 export const emits = {
   'component_service.cmd.component.register.v1':
-    natsEvents['*'].component_service['*']['*'].cmd.component.register.v1['*'],
+    natsEvents['*'].component_service['*']['component-agent'].cmd.component.register.v1['*'],
 }
 
 export const spec = {

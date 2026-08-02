@@ -24,7 +24,6 @@ export async function handler({
 
   const registrationSubject = createSubject(emits['component_service.cmd.component.register.v1']).forPublish()
     .env('prod')
-    .context('component-agent')
     .build()
 
   for (const [, comp] of components) {
