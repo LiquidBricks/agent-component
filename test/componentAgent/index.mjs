@@ -269,6 +269,7 @@ test('queued compute_function commands are processed once the router is ready', 
   assert.equal(resultMessage.data.name, 'add')
   assert.equal(resultMessage.data.type, 'task')
   assert.equal(resultMessage.data.result, 5)
+  assert.equal(resultMessage.data.status, 'provided')
 
   agent.removeAllListeners()
   agent.close()

@@ -10,10 +10,17 @@ export function createQueueProcessor({
   let isProcessingQueue = false;
 
 
-  const publish = (subject, data) => {
+  const publish = (subject, data) => new Promise((resolve, reject) => {
     const payload = JSON.stringify({ subject, data });
-    socket.send(payload);
-  };
+    try {
+      socket.send(payload, (error) => {
+        if (error) reject(error);
+        else resolve();
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
 
   const router = createExecutionRouter({
     publish,
@@ -54,4 +61,3 @@ export function createQueueProcessor({
 
   return { enqueueMessage, processQueue };
 }
-

@@ -1,6 +1,7 @@
 import { router } from '@liquid-bricks/lib-nats-subject';
 import { PRECONDITION_INVALID } from '@liquid-bricks/lib-diagnostics/codes'
 import { path as computeFunctionPath, spec as computeFunctionSpec } from './routes/compute_function/index.js'
+import { isTerminalPublishFailure } from './routes/compute_function/terminalEvent.js'
 import { path as registerComponentsPath, spec as registerComponentsSpec } from './routes/register_components/index.js'
 
 export const routes = [
@@ -28,8 +29,14 @@ export function createExecutionRouter({
         try { message?.ack?.() } catch (_) { /* ignore */ }
       }
     })
-    .error(({ error, message, rootCtx: { diagnostics } }) => {
+    .error(async ({ error, message, rootCtx: { diagnostics } }) => {
       diagnostics.warn(false, PRECONDITION_INVALID, 'component provider router error', { error, subject: message?.subject })
+
+      if (isTerminalPublishFailure(error)) {
+        try { await message?.nak?.() } catch (_) { /* preserve the publication failure */ }
+        throw error
+      }
+
       try { message?.ack?.() } catch (_) { /* ignore */ }
       return { status: 'errored' }
     })

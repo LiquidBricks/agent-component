@@ -2,6 +2,7 @@ import { decodeData } from '../../middleware.js'
 import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/basic'
 import { handler } from './handler.js'
 import { publishComputeResultDone } from './publishComputeResultDone.js'
+import { publishComputeResultError } from './publishComputeResultError.js'
 import { validatePayload } from './validatePayload.js'
 
 import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
@@ -14,6 +15,8 @@ export const path = createSubject(natsEvents['*'].agent['*']['*'].cmd.component.
 export const emits = {
   'gateway.function_result.evt.component.compute_function.v1':
     natsEvents['*'].gateway['*'].function_result.evt.component.compute_function.v1['*'],
+  'gateway.function_result.evt.component.compute_function_failed.v1':
+    natsEvents['*'].gateway['*'].function_result.evt.component.compute_function_failed.v1['*'],
 }
 
 export const spec = {
@@ -25,6 +28,9 @@ export const spec = {
     validatePayload,
   ],
   handler,
+  onError: [
+    publishComputeResultError,
+  ],
   post: [
     publishComputeResultDone,
   ],

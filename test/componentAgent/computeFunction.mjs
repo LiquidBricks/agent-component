@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 
 import { diagnostics as makeDiagnostics } from '@liquid-bricks/lib-diagnostics'
 import { handler } from '../../componentAgent/router/routes/compute_function/handler.js'
+import { createExecutionRouter } from '../../componentAgent/router/index.js'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 import { agentFn as createAgentFn } from '../../../lib-component-builder/componentBuilder/index.js'
 
@@ -32,6 +33,216 @@ test('gate fnc must return a boolean', async () => {
     scope: { node: { fnc: () => true }, deps: {}, type: 'gate', name: 'setup' },
   })
   assert.deepEqual(result, { result: true })
+})
+
+test('handler failures publish an error result before reaching the global router error handler', async () => {
+  const diagnostics = makeDiagnosticsInstance()
+  const componentHash = 'component-hash'
+  const executionError = Object.assign(new Error('task exploded'), { code: 'TASK_EXPLODED' })
+  const brokenComponent = {
+    [s.INTERNALS]: {
+      nodes: {
+        data: new Map(),
+        tasks: new Map([
+          ['explode', { fnc: () => { throw executionError } }],
+        ]),
+        gates: new Map(),
+        agentFns: new Map(),
+      },
+    },
+  }
+  const published = []
+  const router = createExecutionRouter({
+    diagnostics,
+    publish: async (subject, data) => published.push({ subject, data }),
+  })
+  router.context.componentStore.set(new Map([[componentHash, brokenComponent]]))
+
+  let acknowledgements = 0
+  const subject = 'prod.agent._._.cmd.component.compute_function.v1._'
+  const response = await router.request({
+    subject,
+    message: {
+      subject,
+      data: {
+        instanceId: 'instance-1',
+        deps: {},
+        componentHash,
+        name: 'explode',
+        type: 'task',
+      },
+      ack() { acknowledgements += 1 },
+    },
+  })
+
+  assert.deepEqual(published, [{
+    subject: 'prod.gateway._.function_result.evt.component.compute_function_failed.v1._',
+    data: {
+      instanceId: 'instance-1',
+      name: 'explode',
+      type: 'task',
+      status: 'error',
+      error: {
+        name: 'Error',
+        message: 'task exploded',
+        code: 'TASK_EXPLODED',
+      },
+    },
+  }])
+  assert.equal(response.scope.status, 'errored')
+  assert.equal(response.scope.error, executionError)
+  assert.equal(acknowledgements, 1)
+})
+
+test('pre failures publish one error result when compute identity is available', async () => {
+  const diagnostics = makeDiagnosticsInstance()
+  const published = []
+  const router = createExecutionRouter({
+    diagnostics,
+    publish: async (subject, data) => published.push({ subject, data }),
+  })
+  router.context.componentStore.set(new Map())
+
+  let acknowledgements = 0
+  const subject = 'prod.agent._._.cmd.component.compute_function.v1._'
+  const response = await router.request({
+    subject,
+    message: {
+      subject,
+      data: {
+        instanceId: 'instance-pre-error',
+        deps: {},
+        componentHash: 'missing-component',
+        name: 'work',
+        type: 'task',
+      },
+      ack() { acknowledgements += 1 },
+    },
+  })
+
+  assert.equal(published.length, 1)
+  assert.equal(published[0].data.instanceId, 'instance-pre-error')
+  assert.equal(published[0].data.name, 'work')
+  assert.equal(published[0].data.type, 'task')
+  assert.equal(published[0].data.status, 'error')
+  assert.equal(Object.hasOwn(published[0].data, 'result'), false)
+  assert.equal(published[0].subject, 'prod.gateway._.function_result.evt.component.compute_function_failed.v1._')
+  assert.equal(published[0].data.error.message, 'component not found for execution')
+  assert.equal(response.scope.status, 'errored')
+  assert.equal(acknowledgements, 1)
+})
+
+test('a provided-result post failure publishes one error terminal result', async () => {
+  const diagnostics = makeDiagnosticsInstance()
+  const componentHash = 'post-failure-component'
+  const postError = new Error('provided result publish failed')
+  const component = {
+    [s.INTERNALS]: {
+      nodes: {
+        data: new Map(),
+        tasks: new Map([
+          ['work', { fnc: () => 42 }],
+        ]),
+        gates: new Map(),
+        agentFns: new Map(),
+      },
+    },
+  }
+  const attempts = []
+  const delivered = []
+  const router = createExecutionRouter({
+    diagnostics,
+    publish: async (subject, data) => {
+      attempts.push(data.status)
+      if (data.status === 'provided') throw postError
+      delivered.push({ subject, data })
+    },
+  })
+  router.context.componentStore.set(new Map([[componentHash, component]]))
+
+  let acknowledgements = 0
+  const subject = 'prod.agent._._.cmd.component.compute_function.v1._'
+  const response = await router.request({
+    subject,
+    message: {
+      subject,
+      data: {
+        instanceId: 'instance-post-error',
+        deps: {},
+        componentHash,
+        name: 'work',
+        type: 'task',
+      },
+      ack() { acknowledgements += 1 },
+    },
+  })
+
+  assert.deepEqual(attempts, ['provided', 'error'])
+  assert.equal(delivered.length, 1)
+  assert.equal(delivered[0].subject, 'prod.gateway._.function_result.evt.component.compute_function_failed.v1._')
+  assert.equal(delivered[0].data.status, 'error')
+  assert.equal(Object.hasOwn(delivered[0].data, 'result'), false)
+  assert.deepEqual(delivered[0].data.error, {
+    name: 'Error',
+    message: postError.message,
+  })
+  assert.equal(response.scope.error, postError)
+  assert.equal(response.scope.status, 'errored')
+  assert.equal(acknowledgements, 1)
+})
+
+test('terminal error publication failure is nacked, not acked, and rejects for retry', async () => {
+  const diagnostics = makeDiagnosticsInstance()
+  const componentHash = 'terminal-publish-failure-component'
+  const executionError = new Error('task exploded')
+  const publicationError = new Error('terminal result transport failed')
+  const component = {
+    [s.INTERNALS]: {
+      nodes: {
+        data: new Map(),
+        tasks: new Map([
+          ['explode', { fnc: () => { throw executionError } }],
+        ]),
+        gates: new Map(),
+        agentFns: new Map(),
+      },
+    },
+  }
+  let publishAttempts = 0
+  const router = createExecutionRouter({
+    diagnostics,
+    publish: async () => {
+      publishAttempts += 1
+      throw publicationError
+    },
+  })
+  router.context.componentStore.set(new Map([[componentHash, component]]))
+
+  let acknowledgements = 0
+  let negativeAcknowledgements = 0
+  const subject = 'prod.agent._._.cmd.component.compute_function.v1._'
+  await assert.rejects(
+    () => router.request({
+      subject,
+      message: {
+        subject,
+        data: {
+          instanceId: 'instance-terminal-publish-error',
+          deps: {},
+          componentHash,
+          name: 'explode',
+          type: 'task',
+        },
+        ack() { acknowledgements += 1 },
+        nak() { negativeAcknowledgements += 1 },
+      },
+    }),
+    (error) => error === publicationError,
+  )
+
+  assert.equal(publishAttempts, 1)
+  assert.equal(acknowledgements, 0)
+  assert.equal(negativeAcknowledgements, 1)
 })
 
 test('node fnc receives registered agentFns by alias', async () => {
