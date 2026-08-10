@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 
 import { diagnostics as makeDiagnostics } from '@liquid-bricks/lib-diagnostics'
 import { handler } from '../../componentAgent/router/routes/compute_function/handler.js'
+import { publishComputeResultDone } from '../../componentAgent/router/routes/compute_function/publishComputeResultDone.js'
+import { spec as computeFunctionSpec } from '../../componentAgent/router/routes/compute_function/index.js'
 import { createExecutionRouter } from '../../componentAgent/router/index.js'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
 import { agentFn as createAgentFn } from '../../../lib-component-builder/componentBuilder/index.js'
@@ -28,11 +30,80 @@ test('gate fnc must return a boolean', async () => {
     diagnostics.DiagnosticError,
   )
 
-  const result = await handler({
+  await assert.rejects(
+    () => handler({
+      rootCtx: { diagnostics },
+      scope: { node: { fnc: () => { } }, deps: {}, type: 'gate', name: 'setup' },
+    }),
+    diagnostics.DiagnosticError,
+  )
+
+  const trueResult = await handler({
     rootCtx: { diagnostics },
     scope: { node: { fnc: () => true }, deps: {}, type: 'gate', name: 'setup' },
   })
-  assert.deepEqual(result, { result: true })
+  assert.deepEqual(trueResult, { result: true })
+
+  const falseResult = await handler({
+    rootCtx: { diagnostics },
+    scope: { node: { fnc: () => false }, deps: {}, type: 'gate', name: 'setup' },
+  })
+  assert.deepEqual(falseResult, { result: false })
+})
+
+test('data and task functions without return values publish provided null results', async () => {
+  const diagnostics = makeDiagnosticsInstance()
+  const published = []
+
+  for (const type of ['data', 'task']) {
+    const execution = await handler({
+      rootCtx: { diagnostics },
+      scope: {
+        node: { fnc: () => { } },
+        deps: {},
+        name: 'voidResult',
+        type,
+      },
+    })
+    const scope = {
+      instanceId: `instance-${type}`,
+      name: 'voidResult',
+      type,
+      ...execution,
+    }
+    await publishComputeResultDone({
+      scope,
+      rootCtx: {
+        publish: async (subject, data) => {
+          published.push(JSON.parse(JSON.stringify({ subject, data })))
+        },
+      },
+      routeCtx: computeFunctionSpec.context,
+    })
+  }
+
+  assert.deepEqual(published, [
+    {
+      subject: 'prod.gateway._.function_result.evt.component.compute_function.v1._',
+      data: {
+        instanceId: 'instance-data',
+        name: 'voidResult',
+        type: 'data',
+        result: null,
+        status: 'provided',
+      },
+    },
+    {
+      subject: 'prod.gateway._.function_result.evt.component.compute_function.v1._',
+      data: {
+        instanceId: 'instance-task',
+        name: 'voidResult',
+        type: 'task',
+        result: null,
+        status: 'provided',
+      },
+    },
+  ])
 })
 
 test('handler failures publish an error result before reaching the global router error handler', async () => {

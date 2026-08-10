@@ -6,12 +6,13 @@ export async function publishComputeResultDone({ scope, rootCtx: { publish }, ro
   if (getPublishedTerminalStatus(scope)) return
 
   const { instanceId, result, type, name } = scope
+  const publishedResult = result === undefined ? null : result
   const subject = createSubject(emits['gateway.function_result.evt.component.compute_function.v1']).forPublish()
     .env('prod')
 
   await publish(
     subject.build(),
-    { instanceId, name, type, result, status: COMPUTE_FUNCTION_STATUS.PROVIDED },
+    { instanceId, name, type, result: publishedResult, status: COMPUTE_FUNCTION_STATUS.PROVIDED },
   )
 
   markTerminalPublished(scope, COMPUTE_FUNCTION_STATUS.PROVIDED)
