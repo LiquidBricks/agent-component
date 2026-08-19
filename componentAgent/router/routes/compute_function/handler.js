@@ -1,9 +1,26 @@
 import { PRECONDITION_INVALID, PRECONDITION_REQUIRED } from '@liquid-bricks/lib-diagnostics/codes'
 import { s } from '@liquid-bricks/lib-component-builder/component/builder/helper'
+import { runWithConsoleEventStream } from './consoleEventStream.js'
+import { publishComputeConsoleEvent } from './publishComputeConsoleEvent.js'
 
-export async function handler({ rootCtx: { diagnostics, agentFnStore }, scope: { component, node, instanceId, name, deps, type } }) {
+export async function handler({
+  rootCtx: { diagnostics, agentFnStore, publish },
+  routeCtx: { emits } = {},
+  scope: { component, node, instanceId, name, deps, type },
+}) {
   const agentFn = buildAgentFnContext({ diagnostics, agentFnStore, component, node, instanceId, name, type })
-  const result = await node.fnc({ deps, agentFn })
+  const result = await runWithConsoleEventStream({
+    execute: () => node.fnc({ deps, agentFn }),
+    emit: ({ method, args }) => publishComputeConsoleEvent({
+      publish,
+      emits,
+      instanceId,
+      name,
+      type,
+      method,
+      args,
+    }),
+  })
 
   if (type === 'gate') {
     diagnostics.require(

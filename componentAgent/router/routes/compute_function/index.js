@@ -3,6 +3,7 @@ import { create as createSubject } from '@liquid-bricks/lib-nats-subject/create/
 import { handler } from './handler.js'
 import { publishComputeResultDone } from './publishComputeResultDone.js'
 import { publishComputeResultError } from './publishComputeResultError.js'
+import { COMPUTE_CONSOLE_EVENT } from './publishComputeConsoleEvent.js'
 import { validatePayload } from './validatePayload.js'
 
 import { events as natsEvents } from '@liquid-bricks/lib-nats-subject/events/nats'
@@ -13,6 +14,8 @@ export const path = createSubject(natsEvents['*'].agent['*']['*'].cmd.component.
   .toObject()
 
 export const emits = {
+  [COMPUTE_CONSOLE_EVENT]:
+    natsEvents['*'].gateway['*'].function_console.evt.console['*'].v1['*'],
   'gateway.function_result.evt.component.compute_function.v1':
     natsEvents['*'].gateway['*'].function_result.evt.component.compute_function.v1['*'],
   'gateway.function_result.evt.component.compute_function_failed.v1':
